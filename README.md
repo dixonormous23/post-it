@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sticky Notes & Calendar App
+
+A beautiful, iPad-optimized sticky notes application with Google Calendar integration. Built with Next.js, Styled Components, and Framer Motion.
+
+## Features
+
+- **Draggable Sticky Notes**: Create, edit, and organize notes on a canvas
+- **Color Customization**: 8 pastel color options for notes
+- **Resize Notes**: Drag corner to resize
+- **Local Storage**: Notes persist in browser storage
+- **Google Calendar Integration**: View upcoming 7 days of events
+- **Smooth Animations**: Spring physics for drags, fade/scale for creation/deletion
+- **iPad Optimized**: Touch-friendly with 44px+ hit targets
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Set Up Google Calendar (Optional)
+
+To enable Google Calendar integration:
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable the Google Calendar API
+4. Go to "Credentials" and create an OAuth 2.0 Client ID
+5. Set authorized redirect URI to: `http://localhost:3000/api/auth/callback/google`
+6. Copy the Client ID and Client Secret
+
+Create a `.env.local` file in the project root:
+
+```bash
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-random-secret-string-here
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+Generate a secret with:
+```bash
+openssl rand -base64 32
+```
+
+### 3. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Create Note**: Click the + button in the toolbar
+- **Select Color**: Choose from 6 colors before creating, or change on the note
+- **Edit Note**: Click on a note's content to edit
+- **Move Note**: Drag the note anywhere on the canvas
+- **Resize Note**: Drag the corner handle
+- **Delete Note**: Click the X button on the note
+- **Calendar**: Click "Sign in with Google" to see your events
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Styled Components
+- **Drag & Drop**: @dnd-kit/core
+- **Animations**: Framer Motion
+- **Auth**: NextAuth.js
+- **Icons**: Lucide React
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── api/auth/[...nextauth]/  # NextAuth API routes
+│   ├── globals.css              # Global styles
+│   ├── layout.tsx               # Root layout
+│   └── page.tsx                 # Main page
+├── components/
+│   ├── Canvas/                  # Draggable notes canvas
+│   ├── Calendar/                # Calendar panel
+│   ├── Layout/                  # App layout wrapper
+│   ├── StickyNote/              # Individual note component
+│   └── Toolbar/                 # Bottom toolbar
+├── hooks/
+│   ├── useGoogleCalendar.ts     # Calendar API hook
+│   ├── useLocalStorage.ts       # localStorage hook
+│   └── useNotes.ts              # Notes state management
+├── lib/
+│   ├── auth.ts                  # NextAuth configuration
+│   └── styled-registry.tsx      # Styled Components SSR
+└── types/
+    ├── index.ts                 # Shared types
+    └── next-auth.d.ts           # NextAuth type extensions
+```
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
