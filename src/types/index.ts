@@ -127,6 +127,38 @@ export interface CalendarEvent {
   colorId?: string;
 }
 
+// Local calendar events (created without Google integration)
+export interface LocalCalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  date: string; // ISO date format (YYYY-MM-DD)
+  time?: string; // Optional time in HH:MM format
+  isAllDay: boolean;
+  color: string; // Hex color
+  createdAt: number;
+  updatedAt: number;
+}
+
+// Unified calendar item for display purposes
+export type CalendarItemType = 'google' | 'local' | 'note';
+
+export interface CalendarItem {
+  id: string;
+  title: string;
+  description?: string;
+  date: string; // YYYY-MM-DD
+  time?: string; // HH:MM
+  isAllDay: boolean;
+  type: CalendarItemType;
+  color: string;
+  accentColor: string;
+  // Reference to the original item
+  sourceId: string;
+  // For notes, include the note status
+  noteStatus?: NoteStatus;
+}
+
 export interface DragState {
   isDragging: boolean;
   activeId: string | null;

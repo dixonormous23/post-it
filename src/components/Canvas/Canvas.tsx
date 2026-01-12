@@ -228,7 +228,9 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(DONE_COLLAPSED_KEY);
       if (saved === 'true') {
-        setIsDoneCollapsed(true);
+        setTimeout(() => {
+          setIsDoneCollapsed(true);
+        }, 0);
       }
     }
   }, []);

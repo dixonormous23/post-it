@@ -64,7 +64,7 @@ export const DraggableColorItem = styled(motion.div)<DraggableColorItemProps>`
 
 export const ColorLabel = styled.span<{ $accentColor: string }>`
   font-family: 'DM Sans', sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   color: ${({ $accentColor }) => $accentColor};
   text-align: center;

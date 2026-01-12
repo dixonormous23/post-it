@@ -236,6 +236,67 @@ export const EventPill = styled(motion.div)<EventPillProps>`
   text-overflow: ellipsis;
 `;
 
+// Dynamic colored event pill for local events and notes
+interface DynamicEventPillProps {
+  $bgColor: string;
+  $accentColor: string;
+  $type: 'google' | 'local' | 'note';
+}
+
+export const DynamicEventPill = styled(motion.div)<DynamicEventPillProps>`
+  padding: 3px 8px;
+  background: ${({ $bgColor }) => $bgColor};
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: ${({ $accentColor }) => $accentColor};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  ${({ $type }) => $type === 'note' && `
+    border-left: 3px solid currentColor;
+    padding-left: 6px;
+  `}
+`;
+
+export const EventTypeIcon = styled.span`
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+`;
+
+export const AddEventButton = styled.button`
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 107, 107, 0.1);
+  color: #FF6B6B;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  
+  ${DayCell}:hover & {
+    opacity: 1;
+  }
+  
+  &:hover {
+    background: rgba(255, 107, 107, 0.2);
+    transform: scale(1.1);
+  }
+`;
+
 export const MoreEvents = styled.span`
   font-family: 'DM Sans', sans-serif;
   font-size: 10px;

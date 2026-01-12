@@ -2,9 +2,12 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, Plus, StickyNote, Calendar as CalendarIcon2 } from 'lucide-react';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
-import { CalendarEvent } from '@/types';
+import { useLocalCalendar, useCalendarItems } from '@/hooks/useLocalCalendar';
+import { useNotes } from '@/hooks/useNotes';
+import { CalendarEvent, CalendarItem } from '@/types';
+import { CalendarEventModal } from '@/components/Modal/CalendarEventModal';
 import {
   CalendarContainer,
   CalendarHeader,
@@ -23,8 +26,10 @@ import {
   DayCell,
   DayNumber,
   EventsList,
-  EventPill,
+  DynamicEventPill,
+  EventTypeIcon,
   MoreEvents,
+  AddEventButton,
   IntegrationSection,
   IntegrationIcon,
   IntegrationInfo,
@@ -61,7 +66,11 @@ function isSameDay(date1: Date, date2: Date): boolean {
   );
 }
 
-function getEventsForDate(events: CalendarEvent[], date: Date): CalendarEvent[] {
+function formatDateToString(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+function getGoogleEventsForDate(events: CalendarEvent[], date: Date): CalendarEvent[] {
   return events.filter(event => {
     const eventDate = event.start.dateTime 
       ? new Date(event.start.dateTime) 
@@ -122,6 +131,15 @@ function formatHour(hour: number): string {
   return `${hour - 12} PM`;
 }
 
+// Color presets for Google events
+const googleEventColors = [
+  { bg: '#E3F2FD', text: '#1565C0' },
+  { bg: '#F3E5F5', text: '#7B1FA2' },
+  { bg: '#E8F5E9', text: '#2E7D32' },
+  { bg: '#FFF3E0', text: '#E65100' },
+  { bg: '#FCE4EC', text: '#C2185B' },
+];
+
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24">
     <path
@@ -143,7 +161,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const CalendarIcon = () => (
+const CalendarIconSvg = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <path 
       d="M4 7a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" 
@@ -160,8 +178,14 @@ const CalendarIcon = () => (
 export const CalendarView: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
+  
   const { status } = useSession();
-  const { events, isLoading, refresh } = useGoogleCalendar();
+  const { events: googleEvents, isLoading, refresh } = useGoogleCalendar();
+  const { notes } = useNotes();
+  const { createEvent } = useLocalCalendar();
+  const { getItemsForDate } = useCalendarItems(notes);
   
   const today = useMemo(() => new Date(), []);
   const currentHour = today.getHours();
@@ -216,6 +240,59 @@ export const CalendarView: React.FC = () => {
   const handleSignOut = () => {
     signOut({ callbackUrl: window.location.href });
   };
+
+  const handleDayClick = useCallback((date: Date) => {
+    setSelectedDate(formatDateToString(date));
+    setShowEventModal(true);
+  }, []);
+
+  const handleAddEvent = useCallback((e: React.MouseEvent, date: Date) => {
+    e.stopPropagation();
+    setSelectedDate(formatDateToString(date));
+    setShowEventModal(true);
+  }, []);
+
+  const handleSaveEvent = useCallback((event: {
+    title: string;
+    description?: string;
+    date: string;
+    time?: string;
+    isAllDay: boolean;
+    color: string;
+  }) => {
+    createEvent(event.title, event.date, {
+      description: event.description,
+      time: event.time,
+      isAllDay: event.isAllDay,
+      color: event.color,
+    });
+  }, [createEvent]);
+
+  // Get all items for a date (Google events, local events, and notes)
+  const getAllItemsForDate = useCallback((date: Date) => {
+    const dateStr = formatDateToString(date);
+    const localItems = getItemsForDate(dateStr);
+    const googleEventsForDate = getGoogleEventsForDate(googleEvents, date);
+    
+    // Convert Google events to CalendarItem format
+    const googleItems: CalendarItem[] = googleEventsForDate.map((event, index) => {
+      const colorPreset = googleEventColors[index % googleEventColors.length];
+      return {
+        id: `google-${event.id}`,
+        title: event.summary,
+        description: event.description,
+        date: dateStr,
+        time: event.start.dateTime ? new Date(event.start.dateTime).toTimeString().slice(0, 5) : undefined,
+        isAllDay: !event.start.dateTime,
+        type: 'google' as const,
+        color: colorPreset.bg,
+        accentColor: colorPreset.text,
+        sourceId: event.id,
+      };
+    });
+    
+    return [...googleItems, ...localItems];
+  }, [getItemsForDate, googleEvents]);
 
   return (
     <CalendarContainer>
@@ -282,12 +359,12 @@ export const CalendarView: React.FC = () => {
           transition={{ delay: 0.2 }}
         >
           <IntegrationIcon>
-            <CalendarIcon />
+            <CalendarIconSvg />
           </IntegrationIcon>
           <IntegrationInfo>
             <IntegrationTitle>Connect Google Calendar</IntegrationTitle>
             <IntegrationDescription>
-              Sync your Google Calendar to see your events here
+              Optionally sync your Google Calendar to see those events here too
             </IntegrationDescription>
           </IntegrationInfo>
           <GoogleButton
@@ -308,12 +385,12 @@ export const CalendarView: React.FC = () => {
           transition={{ delay: 0.2 }}
         >
           <IntegrationIcon>
-            <CalendarIcon />
+            <CalendarIconSvg />
           </IntegrationIcon>
           <IntegrationInfo>
             <IntegrationTitle>Google Calendar Connected</IntegrationTitle>
             <IntegrationDescription>
-              Your events are synced and displayed below
+              Your Google events are synced and displayed below
             </IntegrationDescription>
           </IntegrationInfo>
           <SignOutButton onClick={handleSignOut}>
@@ -347,9 +424,9 @@ export const CalendarView: React.FC = () => {
                 const isCurrentMonth = date.getMonth() === currentDate.getMonth();
                 const isToday = isSameDay(date, today);
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                const dayEvents = getEventsForDate(events, date);
-                const visibleEvents = dayEvents.slice(0, 2);
-                const remainingCount = dayEvents.length - visibleEvents.length;
+                const dayItems = getAllItemsForDate(date);
+                const visibleItems = dayItems.slice(0, 2);
+                const remainingCount = dayItems.length - visibleItems.length;
                 
                 return (
                   <DayCell
@@ -360,21 +437,42 @@ export const CalendarView: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: isCurrentMonth ? 1 : 0.4, scale: 1 }}
                     transition={{ delay: index * 0.01 }}
+                    onClick={() => handleDayClick(date)}
+                    style={{ position: 'relative' }}
                   >
+                    <AddEventButton
+                      onClick={(e) => handleAddEvent(e, date)}
+                      title="Add event"
+                    >
+                      <Plus size={12} />
+                    </AddEventButton>
                     <DayNumber $isToday={isToday}>
                       {date.getDate()}
                     </DayNumber>
                     <EventsList>
-                      {visibleEvents.map((event, eventIndex) => (
-                        <EventPill
-                          key={event.id}
-                          $colorIndex={eventIndex}
+                      {visibleItems.map((item) => (
+                        <DynamicEventPill
+                          key={item.id}
+                          $bgColor={item.color}
+                          $accentColor={item.accentColor}
+                          $type={item.type}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.1 }}
+                          title={item.title}
                         >
-                          {event.summary}
-                        </EventPill>
+                          {item.type === 'note' && (
+                            <EventTypeIcon>
+                              <StickyNote size={10} />
+                            </EventTypeIcon>
+                          )}
+                          {item.type === 'local' && (
+                            <EventTypeIcon>
+                              <CalendarIcon2 size={10} />
+                            </EventTypeIcon>
+                          )}
+                          {item.title}
+                        </DynamicEventPill>
                       ))}
                       {remainingCount > 0 && (
                         <MoreEvents>+{remainingCount} more</MoreEvents>
@@ -426,6 +524,13 @@ export const CalendarView: React.FC = () => {
           </WeekViewContainer>
         )}
       </CalendarGrid>
+
+      <CalendarEventModal
+        isOpen={showEventModal}
+        onClose={() => setShowEventModal(false)}
+        selectedDate={selectedDate}
+        onSave={handleSaveEvent}
+      />
     </CalendarContainer>
   );
 };

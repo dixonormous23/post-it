@@ -59,9 +59,6 @@ const DraggableCategory: React.FC<DraggableCategoryProps> = ({ category, onEdit 
       >
         <Pencil size={10} />
       </EditButton>
-      <DragIcon $accentColor={category.accentColor}>
-        <GripVertical size={12} />
-      </DragIcon>
       <ColorLabel $accentColor={category.accentColor}>
         {category.name}
       </ColorLabel>
